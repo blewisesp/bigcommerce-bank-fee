@@ -17,6 +17,17 @@ const headers = {
 
 app.get('/', (req, res) => res.send('Bank fee server is running!'));
 
+app.post('/list-fees', async (req, res) => {
+  const { checkoutId } = req.body;
+  try {
+    const listRes = await fetch(`${BC_API_BASE}/checkouts/${checkoutId}/fees`, { headers });
+    const data = await listRes.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/add-bank-fee', async (req, res) => {
   const { checkoutId } = req.body;
   if (!checkoutId) return res.status(400).json({ error: 'checkoutId required' });
@@ -53,6 +64,7 @@ app.delete('/remove-bank-fee', async (req, res) => {
   try {
     const listRes = await fetch(`${BC_API_BASE}/checkouts/${checkoutId}/fees`, { headers });
     const { data: fees } = await listRes.json();
+    console.log('Fees from API:', JSON.stringify(fees));
     const bankFees = fees && fees.filter(function(f) { return f.name === 'bank_deposit_fee'; });
     if (!bankFees || bankFees.length === 0) return res.json({ message: 'No fee to remove' });
     for (const fee of bankFees) {
