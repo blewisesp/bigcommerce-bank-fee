@@ -1,0 +1,66 @@
+const express = require('express');
+const cors = require('cors');
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+const STORE_HASH = process.env.STORE_HASH;
+const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+const BC_API_BASE = `https://api.bigcommerce.com/stores/${STORE_HASH}/v3`;
+
+const headers = {
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+  'X-Auth-Token': ACCESS_TOKEN,
+};
+
+// Health check
+app.get('/', (req, res) => res.send('Bank fee server is running!'));
+
+// Add the $50 bank deposit fee
+app.post('/add-bank-fee', async (req, res) => {
+  const { checkoutId } = req.body;
+  if (!checkoutId) return res.status(400).json({ error: 'checkoutId required' });
+
+  try {
+    const response = await fetch(`${BC_API_BASE}/checkouts/${checkoutId}/fees`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        name: 'bank_deposit_fee',
+        display_name: 'Bank Transfer Fee',
+        cost: 50.00,
+        type: 'fixed',
+      }),
+    });
+    const data = await response.json();
+    res.status(response.ok ? 200 : 400).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Remove the fee when a different payment method is chosen
+app.delete('/remove-bank-fee', async (req, res) => {
+  const { checkoutId } = req.body;
+  if (!checkoutId) return res.status(400).json({ error: 'checkoutId required' });
+
+  try {
+    const listRes = await fetch(`${BC_API_BASE}/checkouts/${checkoutId}/fees`, { headers });
+    const { data: fees } = await listRes.json();
+    const bankFee = fees?.find(f => f.name === 'bank_deposit_fee');
+    if (!bankFee) return res.json({ message: 'No fee to remove' });
+
+    const delRes = await fetch(`${BC_API_BASE}/checkouts/${checkoutId}/fees/${bankFee.id}`, {
+      method: 'DELETE',
+      headers,
+    });
+    res.status(delRes.ok ? 200 : 400).json({ message: 'Fee removed' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
