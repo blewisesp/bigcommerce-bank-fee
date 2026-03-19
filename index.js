@@ -36,6 +36,7 @@ app.post('/add-bank-fee', async (req, res) => {
           name: 'bank_deposit_fee',
           display_name: 'Bank Transfer Fee',
           cost: 50.00,
+          type: 'surcharge',
           source: 'storefrontapi',
         }]
       }),
