@@ -67,5 +67,21 @@ app.delete('/remove-bank-fee', async (req, res) => {
   }
 });
 
+app.delete('/remove-by-ids', async (req, res) => {
+  const { checkoutId, feeIds } = req.body;
+  if (!checkoutId || !feeIds) return res.status(400).json({ error: 'checkoutId and feeIds required' });
+  try {
+    for (const id of feeIds) {
+      await fetch(`${BC_API_BASE}/checkouts/${checkoutId}/fees/${id}`, {
+        method: 'DELETE',
+        headers,
+      });
+    }
+    res.json({ message: 'Removed ' + feeIds.length + ' fee(s)' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
