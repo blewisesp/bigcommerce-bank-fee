@@ -31,11 +31,13 @@ app.post('/add-bank-fee', async (req, res) => {
     const response = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
-        name: 'bank_deposit_fee',
-        display_name: 'Bank Transfer Fee',
-        cost: 50.00,
-        type: 'fixed',
+body: JSON.stringify({
+        fees: [{
+          name: 'bank_deposit_fee',
+          display_name: 'Bank Transfer Fee',
+          cost: 50.00,
+          type: 'fixed',
+        }]
       }),
     });
     const text = await response.text();
