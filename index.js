@@ -22,6 +22,73 @@ app.get('/', (req, res) => res.send('Bank fee server is running!'));
 app.post('/add-bank-fee', async (req, res) => {
   const { checkoutId } = req.body;
   console.log('Received checkoutId:', checkoutId);
+  if (!checkoutId) return res.status(400).json({ error: 'checkoutId required' });
+
+  try {
+    // First check if fee already exists
+    const listRes = await fetch(`${BC_API_BASE}/checkouts/${checkoutId}/fees`, { headers });
+    const { data: existingFees } = await listRes.json();
+    const alreadyExists = existingFees?.some(f => f.name === 'bank_deposit_fee');
+
+    if (alreadyExists) {
+      console.log('Fee already exists, skipping');
+      return res.json({ message: 'Fee already exists' });
+    }
+
+    const url = `${BC_API_BASE}/checkouts/${checkoutId}/fees`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        fees: [{
+          name: 'bank_deposit_fee',
+          type: 'custom_fee',
+          display_name: 'Bank Transfer Fee',
+          cost: '50.00',
+          source: 'Bank Deposit Fee',
+        }]
+      }),
+    });
+    const text = await response.text();
+    console.log('BigCommerce response:', text);
+    res.status(response.ok ? 200 : 400).json(JSON.parse(text));
+  } catch (err) {
+    console.log('Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Remove ALL instances of the bank deposit fee
+app.delete('/remove-bank-fee', async (req, res) => {
+  const { checkoutId } = req.body;
+  console.log('Received checkoutId for removal:', checkoutId);
+  if (!checkoutId) return res.status(400).json({ error: 'checkoutId required' });
+
+  try {
+    const listRes = await fetch(`${BC_API_BASEconst express = require('express');
+const cors = require('cors');
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+const STORE_HASH = process.env.STORE_HASH;
+const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+const BC_API_BASE = `https://api.bigcommerce.com/stores/${STORE_HASH}/v3`;
+
+const headers = {
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+  'X-Auth-Token': ACCESS_TOKEN,
+};
+
+// Health check
+app.get('/', (req, res) => res.send('Bank fee server is running!'));
+
+// Add the $50 bank deposit fee
+app.post('/add-bank-fee', async (req, res) => {
+  const { checkoutId } = req.body;
+  console.log('Received checkoutId:', checkoutId);
   console.log('Store hash:', STORE_HASH);
   if (!checkoutId) return res.status(400).json({ error: 'checkoutId required' });
 
