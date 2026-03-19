@@ -34,10 +34,10 @@ app.post('/add-bank-fee', async (req, res) => {
       body: JSON.stringify({
         fees: [{
           name: 'bank_deposit_fee',
+          type: 'custom_fee',
           display_name: 'Bank Transfer Fee',
-          cost: 50.00,
-          type: 'surcharge',
-          source: 'storefrontapi',
+          cost: '50.00',
+          source: 'Bank Deposit Fee',
         }]
       }),
     });
