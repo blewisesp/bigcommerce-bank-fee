@@ -53,8 +53,10 @@ app.post('/add-bank-fee', async (req, res) => {
       }),
     });
     const text = await response.text();
+    console.log('Add fee response:', text);
     res.status(response.ok ? 200 : 400).json(JSON.parse(text));
   } catch (err) {
+    console.log('Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -67,35 +69,4 @@ app.delete('/remove-bank-fee', async (req, res) => {
     const checkoutData = await checkoutRes.json();
     const fees = checkoutData.data ? checkoutData.data.fees : checkoutData.fees;
     console.log('Fees from API:', JSON.stringify(fees));
-    const bankFees = fees && fees.filter(function(f) { return f.name === 'bank_deposit_fee'; });
-    if (!bankFees || bankFees.length === 0) return res.json({ message: 'No fee to remove' });
-    for (const fee of bankFees) {
-      await fetch(`${BC_API_BASE}/checkouts/${checkoutId}/fees/${fee.id}`, {
-        method: 'DELETE',
-        headers,
-      });
-    }
-    res.json({ message: 'Removed ' + bankFees.length + ' fee(s)' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete('/remove-by-ids', async (req, res) => {
-  const { checkoutId, feeIds } = req.body;
-  if (!checkoutId || !feeIds) return res.status(400).json({ error: 'checkoutId and feeIds required' });
-  try {
-    for (const id of feeIds) {
-      await fetch(`${BC_API_BASE}/checkouts/${checkoutId}/fees/${id}`, {
-        method: 'DELETE',
-        headers,
-      });
-    }
-    res.json({ message: 'Removed ' + feeIds.length + ' fee(s)' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    const bankFees =
